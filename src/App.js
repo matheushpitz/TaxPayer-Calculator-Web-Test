@@ -1,16 +1,22 @@
+// Libraries
 import React from 'react';
-import './App.css';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import { Card } from 'react-bootstrap';
+import { ToastContainer, toast } from 'react-toastify';
+// Components
 import {FormComponent, createFormData} from './component/form.component';
 import MinimumSalary from './component/minimum-salary.component';
 import PayersTable from './component/payers-table.component';
+// Services
+import { PayerService } from './service/payer.service';
+// models
 import Payer from './model/payer.model';
 import AddPayer from './model/add-payer.model';
-import { PayerService } from './service/payer.service';
-import { ToastContainer, toast } from 'react-toastify';
+// CSS
+import './App.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-toastify/dist/ReactToastify.css';
 
+/** Function to show a success message */
 const success = (message) => {
   toast.success(message,{
     position: "top-right",
@@ -22,6 +28,7 @@ const success = (message) => {
     }); 
 }
 
+/** Function to show a error message */
 const error = (message) => {
   toast.error(message,{
     position: "top-right",
@@ -37,7 +44,7 @@ class App extends React.Component {
 
   constructor(props) {
     super(props);
-
+    // initialize the state
     this.state = {
       formData: createFormData(),
       payers: [],
@@ -45,6 +52,7 @@ class App extends React.Component {
       hasChanged: false
     };
 
+    // Bind them
     this.handleFormChange = this.handleFormChange.bind(this);
     this.handleFormSubmit = this.handleFormSubmit.bind(this);
 
@@ -52,42 +60,49 @@ class App extends React.Component {
     this.handleMSSubmit = this.handleMSSubmit.bind(this);
   }
 
-  validateForm() {
-    return new Promise((resolve, reject) => {      
+  async validateForm() {
+    return new Promise((resolve, reject) => {  
+      // Check if CPF is valid    
       if(this.state.formData.cpf == null || this.state.formData.cpf.length < 14) {
         error("Informe um CPF válido");
         resolve(false);
         return;
       }
+      // Check if there is this CPF in the table 
       if(this.state.payers.filter(p => p.cpf === this.state.formData.cpf).length > 0) {
         error("CPF já cadastrado");
         resolve(false);
         return;
       }
+      // Check if there is this CPF in the Database
       PayerService.has(this.state.formData.cpf).then(result => {
         if(result.has) {
           error("CPF já cadastrado");
           resolve(false);
           return;
         }
-        
+        // Check if name is valid
         if(this.state.formData.name == null || this.state.formData.name.length < 1) {
           error("Informe um Nome");
           resolve(false);
           return;
         }
+        // Check if dependents is valid
         if(this.state.formData.dependents == null || this.state.formData.dependents.length < 1) {
           error("Informe a quantidade de dependentes");
           resolve(false);
           return;
         }
+        // Check if Gross Salary is valid
         if(this.state.formData.grossSalary == null || this.state.formData.grossSalary.length < 1) {
           error("Informe a Renda Bruta");
           resolve(false);
           return;
         }
-
+        // Everything's okay! Keep on.
         resolve(true);
+      }).catch(() => {        
+        reject('Erro ao buscar o CPF na base de dados');
       });            
     });    
   }
@@ -117,6 +132,7 @@ class App extends React.Component {
 
   handleFormSubmit(event) {
     event.preventDefault();
+    // validate
     this.validateForm().then(valid => {
       if(!valid)
         return;
@@ -133,10 +149,13 @@ class App extends React.Component {
       });  
       // Show success message
       success("Contribuinte adicionado com sucesso!");
+    }).catch(() => {
+      error("Erro ao Cadastrar o contribuinte");
     });         
   }
 
   handleMSChange(event) {
+    // Minimum Salary was changed
     this.setState({
       minimumSalary: event.target.value,
       hasChanged: true
@@ -144,10 +163,11 @@ class App extends React.Component {
   }
 
   handleMSSubmit(event) {
-    event.preventDefault();    
+    event.preventDefault();   
+    // validate 
     if(!this.validateMS() || !this.state.hasChanged)
       return;
-
+    // Call API
     PayerService.add(new AddPayer(this.state.payers, this.state.minimumSalary)).then((result) => {
       if(result.success) {
         this.setState({
@@ -160,6 +180,9 @@ class App extends React.Component {
         // Show error message
         error("Erro ao calcular IR!");
       }
+    }).catch(() => {
+      // Show error message
+      error("Erro ao calcular IR!");
     });
   }
 
