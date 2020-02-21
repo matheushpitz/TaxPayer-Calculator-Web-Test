@@ -2,20 +2,22 @@ import React from 'react';
 import { Table } from 'react-bootstrap';
 
 const renderTableLines = (data) => {
-    return data.map((d, i) => {
+    return data.map((d) => {
         return (
-            <tr>
+            <tr key={d.cpf}>
                 <td>{d.cpf}</td>
                 <td>{d.name}</td>
-                <td>{d.dependents}</td>
-                <td>{d.grossSalary}</td>
-                <td>{d.netSalary === 0 ? '' : d.netSalary}</td>
+                <td>{d.numberDependents}</td>
+                <td>{Number(d.grossSalary).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                <td>{d.netSalary === 0 ? '' : Number(d.netSalary).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
             </tr>   
         );
     });
 }
 
 const PayersTableComponent = (props) => {
+    if(!props.visible)
+        return null;
     return (
         <div>
             <h4>Contribuintes Cadastrados</h4>
